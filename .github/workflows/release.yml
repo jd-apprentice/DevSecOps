@@ -1,8 +1,9 @@
-name: Release Pipeline
+name: Build and push to GitHub Packages
 
 on:
-  release:
-    types: [published]
+  push:
+    branches:
+      - main
 
 jobs:
   gitleaks:
