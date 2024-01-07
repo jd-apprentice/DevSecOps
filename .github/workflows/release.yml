@@ -16,7 +16,7 @@ on:
 env:
   SYSTEM: ubuntu-latest
   IMAGE_NAME: devsecops-sample
-  REPOSITORY_NAME: ${{ github.event.repository.name }}
+  REPOSITORY_NAME: ${{ github.repository }}
 
 jobs:
   ## Scan for environment variables
@@ -67,7 +67,7 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
         with:
-          image-ref: 'ghcr.io/{{ github.actor }}/$REPOSITORY_NAME/$IMAGE_NAME:latest'
+          image-ref: 'ghcr.io/$REPOSITORY_NAME/$IMAGE_NAME:latest'
           format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'trivy-results.sarif'
