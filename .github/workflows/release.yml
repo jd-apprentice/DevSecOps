@@ -14,13 +14,15 @@ on:
       - '**.md'
 
 env:
+  SYSTEM: ubuntu-latest
   IMAGE_NAME: devsecops-sample
+  REPOSITORY_NAME: ${{ github.event.repository.name }}
 
 jobs:
   ## Scan for environment variables
   gitleaks:
       name: gitleaks
-      runs-on: ubuntu-latest
+      runs-on: $SYSTEM
       steps:
         - uses: actions/checkout@v3
           with:
@@ -36,7 +38,7 @@ jobs:
     needs: gitleaks
     name: Build and push to GitHub Packages
     permissions: write-all
-    runs-on: ubuntu-latest
+    runs-on: $SYSTEM
     steps:
     - uses: actions/checkout@v3
     - name: Build the Docker image
@@ -57,7 +59,7 @@ jobs:
     
     needs: build_and_push
     name: Trivy vulnerability scanner
-    runs-on: ubuntu-latest
+    runs-on: $SYSTEM
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -65,7 +67,7 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
         with:
-          image-ref: 'ghcr.io/{{ github.actor }}/{{ github.event.repository.name }}/$IMAGE_NAME:latest'
+          image-ref: 'ghcr.io/{{ github.actor }}/$REPOSITORY_NAME/$IMAGE_NAME:latest'
           format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'trivy-results.sarif'
