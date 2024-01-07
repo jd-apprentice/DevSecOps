@@ -4,8 +4,19 @@ on:
   push:
     branches:
       - main
+      - 'releases/**'
+    paths:
+      - '**.ts'
+      - '**.yml'
+      - Dockerfile
+    exclude:
+      - '**.md'
+
+env:
+    IMAGE_NAME: 'devsecops-sample'
 
 jobs:
+  ## Scan for environment variables
   gitleaks:
       name: gitleaks
       runs-on: ubuntu-latest
@@ -19,6 +30,7 @@ jobs:
           env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  ## Docker build and push to registry
   build_and_push:
     needs: gitleaks
     name: Build and push to GitHub Packages
@@ -27,14 +39,15 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build the Docker image
-      run: docker build . --file ./Dockerfile --tag devsecops-sample:latest
+      run: docker build . --file ./Dockerfile --tag $IMAGE_NAME:latest
 
     - name: Publish Docker image to GitHub Packages
       run: |
         echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
-        docker tag devsecops-sample:latest docker.pkg.github.com/${{ github.repository }}/devsecops-sample:latest
-        docker push docker.pkg.github.com/${{ github.repository }}/devsecops-sample:latest
+        docker tag $IMAGE_NAME:latest docker.pkg.github.com/${{ github.repository }}/$IMAGE_NAME:latest
+        docker push docker.pkg.github.com/${{ github.repository }}/$IMAGE_NAME:latest
 
+  ## Scan the docker image that we previously published
   trivy:
     permissions:
       contents: read 
@@ -51,7 +64,7 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
         with:
-          image-ref: 'ghcr.io/jd-apprentice/devsecops-practice/devsecops-sample:latest'
+          image-ref: 'ghcr.io/{{ github.actor }}/{{ github.event.repository.name }}/$IMAGE_NAME:latest'
           format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'trivy-results.sarif'
